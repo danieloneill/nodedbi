@@ -1,0 +1,6 @@
+LibDBI binding for NodeJS. Mostly complete, but of course contributions are much appreciated.
+
+LibDBI and development headers are required.
+On Debian or Ubuntu, apt-get install libdbi-dev.
+
+Then run "node-gyp build" to build the module and "node-gyp install" to install it.
