@@ -6,6 +6,14 @@ For the source code please visit [the github repository](https://github.com/dani
 
 In addition to providing a traditional interface for SQL database access, it also offers developers the ability of paging on results programmatically and storing result handles to a session as shown below.
 
+It's somewhat complete, and of course contributions are much appreciated.
+
+LibDBI and development headers are required.
+
+On Debian or Ubuntu, **apt-get install libdbi-dev.**
+
+Then run **node-gyp configure build** to build the module and **node-gyp install** to install it.
+
 ## Example
 
 ```javascript
