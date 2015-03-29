@@ -74,6 +74,8 @@ var NodeDBI = require('nodedbi');
 var db = new NodeDBI.DBConnection(args);
 ```
 
+A **type** parameter is required. Other parameters are database specific. For database specific driver options see [the libdbi-drivers documentation](http://libdbi-drivers.sourceforge.net/docs.html).
+
 * `args` - Object containing LibDBI-specific connection parameters in key:value sets.
 * `Returns`: A database object, or **undefined** and an Exception on failure.
 
