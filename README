@@ -5,4 +5,4 @@ On Debian or Ubuntu, apt-get install libdbi-dev.
 
 Then run "node-gyp configure build" to build the module and "node-gyp install" to install it.
 
-HTML documentation can be generated from the supplied markdown with mkdocs. Alternatively, see the wiki on Github.
+HTML documentation can be generated from the supplied markdown with mkdocs.
