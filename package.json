@@ -1,6 +1,6 @@
 {
   "name": "nodedbi",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "A LibDBI interface for Node.js",
   "author": {
     "name": "Daniel O'Neill",
@@ -30,9 +30,5 @@
   "bugs": {
     "url": "https://github.com/danieloneill/nodedbi/issues"
   },
-  "homepage": "https://github.com/danieloneill/nodedbi",
-  "readme": "LibDBI binding for NodeJS. Mostly complete, but of course contributions are much appreciated.\n\nLibDBI and development headers are required.\nOn Debian or Ubuntu, apt-get install libdbi-dev.\n\nThen run \"node-gyp configure build\" to build the module and \"node-gyp install\" to install it.\n\nHTML documentation can be generated from the supplied markdown with mkdocs. Alternatively, see the wiki on Github.\n",
-  "_id": "nodedbi@1.0.0",
-  "_shasum": "4b6f1a0f8ebff17267b015996fdf2faf8a93556e",
-  "_from": "nodedbi@"
+  "homepage": "https://github.com/danieloneill/nodedbi"
 }
