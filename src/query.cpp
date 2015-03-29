@@ -383,14 +383,31 @@ void DBQuery::Value(const v8::FunctionCallbackInfo<v8::Value>& args)
 	v8::Isolate* isolate = v8::Isolate::GetCurrent();
 	v8::HandleScope scope(isolate);
 
-	if (args.Length() < 1 || !args[0]->IsNumber())
+	if( args.Length() < 1 )
 	{
-		isolate->ThrowException(v8::Exception::TypeError( v8str("A numeric field index is required.") ) );
+		isolate->ThrowException(v8::Exception::TypeError( v8str("A numeric field index or field name string is required.") ) );
 		return;
 	}
 
 	DBQuery* obj = Unwrap<DBQuery>(args.Holder());
-	unsigned int idx = args[0]->NumberValue();
+	unsigned int idx;
+	if( args[0]->IsNumber() )
+		idx = args[0]->NumberValue();
+	else if( args[0]->IsString() )
+	{
+		v8::Local< v8::String > fieldName = args[0]->ToString();
+	
+		char *fieldChar = new char[ fieldName->Length() + 1 ];
+		fieldName->WriteUtf8( fieldChar );
+		idx = DBI::dbi_result_get_field_idx( obj->m_result, fieldChar );
+		delete fieldChar;
+	}
+	else
+	{
+		isolate->ThrowException(v8::Exception::TypeError( v8str("First parameter must be either a numeric field index or field name string.") ) );
+		return;
+	}
+
 	if( idx < 1 || idx > DBI::dbi_result_get_numfields( obj->m_result ) )
 	{
 		isolate->ThrowException(v8::Exception::TypeError( v8str("Index is invalid.") ) );
