@@ -24,7 +24,7 @@ I've put together a couple Gists that may be useful:
 ```javascript
 #!/usr/bin/nodejs
 
-var mod = require('./build/Release/nodedbi.node');
+var mod = require('nodedbi');
 
 var args = { 'host':'localhost', 'port':3306, 'username':'root', 'password':'', 'type':'mysql', 'dbname':'test' };
 
