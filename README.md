@@ -16,6 +16,11 @@ Then run **node-gyp configure build** to build the module and **node-gyp install
 
 ## Example
 
+I've put together a couple Gists that may be useful:
+
+* [node.js + nodedbi, convenience methods](https://gist.github.com/danieloneill/2605640f020c89fb806a)
+* [Nodejs + libdbi + paging results](https://gist.github.com/danieloneill/d069be8e02e852008cbd)
+
 ```javascript
 #!/usr/bin/nodejs
 
