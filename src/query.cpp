@@ -44,6 +44,14 @@ DBQuery::DBQuery( DBConnection *parent )
 	: m_parent(parent),
 	m_result(NULL)
 {
+	m_parent->Ref();
+}
+
+DBQuery::~DBQuery()
+{
+	if( m_result )
+		DBI::dbi_result_free( m_result );
+	m_parent->Unref();
 }
 
 #define FQINITIAL 1024
@@ -241,19 +249,16 @@ bool DBQuery::query( const v8::FunctionCallbackInfo<v8::Value>& args )
 		}
 	}
 
-	//fprintf(stderr, "%s\n", fmtQuery);
+	// This method isn't threadsafe:
+	pthread_mutex_lock( &st_mutex );
 	m_result = DBI::dbi_conn_query( m_parent->m_conn, fmtQuery );
-	delete fmtQuery;
+	pthread_mutex_unlock( &st_mutex );
+
+	free( fmtQuery );
 	if( !m_result )
 		return false;
 	return true;
 }
-
-DBQuery::~DBQuery()
-{
-	if( m_result )
-		DBI::dbi_result_free( m_result );
-};
 
 void DBQuery::Count(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
@@ -418,7 +423,12 @@ void DBQuery::Value(const v8::FunctionCallbackInfo<v8::Value>& args)
 	if( DBI_TYPE_ERROR == type )
 	{
 		const char *msg;
+
+		// This method isn't threadsafe:
+		pthread_mutex_lock( &st_mutex );
 		DBI::dbi_conn_error( obj->parent()->m_conn, &msg );
+		pthread_mutex_unlock( &st_mutex );
+
 		isolate->ThrowException(v8::Exception::TypeError( v8::String::Concat( v8str("For some reason I can't figure out the data storage type used by this field: "), v8str(msg) ) ) );
 		return;
 	}

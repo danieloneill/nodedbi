@@ -121,7 +121,12 @@ bool DBConnection::initialise( const v8::FunctionCallbackInfo<v8::Value>& args )
 	if( DBI::dbi_conn_connect(m_conn) < 0 )
 	{
 		const char *msg;
+
+		// This method isn't threadsafe.
+		pthread_mutex_lock( &st_mutex );
 		DBI::dbi_conn_error( m_conn, &msg );
+		pthread_mutex_unlock( &st_mutex );
+
 		isolate->ThrowException( v8::Exception::TypeError( v8::String::Concat( v8str("Connection failed: "), v8str(msg) ) ) );
 		DBI::dbi_conn_close( m_conn );
 		m_conn = NULL;
@@ -171,7 +176,12 @@ void DBConnection::LastError(const v8::FunctionCallbackInfo<v8::Value>& args)
 
 	DBConnection* obj = Unwrap<DBConnection>(args.Holder());
 	const char *err;
+
+	// This method isn't threadsafe.
+	pthread_mutex_lock( &st_mutex );
 	DBI::dbi_conn_error( obj->m_conn, &err );
+	pthread_mutex_unlock( &st_mutex );
+
 	args.GetReturnValue().Set( v8str( err ) );
 }
 

@@ -1,3 +1,5 @@
+#include <pthread.h>
+
 namespace DBI {
  extern "C" {
 # include <dbi.h>
@@ -5,6 +7,8 @@ namespace DBI {
 }
 
 #define v8str(a) v8::String::NewFromUtf8(isolate, a)
+
+static pthread_mutex_t st_mutex;
 
 class DBQuery;
 class DBConnection : public node::ObjectWrap {
