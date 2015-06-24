@@ -35,6 +35,7 @@ void DBConnection::Init( v8::Handle<v8::Object> exports )
 
 	NODE_SET_PROTOTYPE_METHOD(tpl, "query", Query);
 	NODE_SET_PROTOTYPE_METHOD(tpl, "lastError", LastError);
+	NODE_SET_PROTOTYPE_METHOD(tpl, "lastErrorCode", LastErrorCode);
 	
 	constructor.Reset(isolate, tpl->GetFunction());
 	exports->Set(v8str("DBConnection"),
@@ -120,15 +121,7 @@ bool DBConnection::initialise( const v8::FunctionCallbackInfo<v8::Value>& args )
 	// Attempt to connect why not.
 	if( DBI::dbi_conn_connect(m_conn) < 0 )
 	{
-		const char *msg;
-
-		// This method isn't threadsafe.
-		pthread_mutex_lock( &st_mutex );
-		DBI::dbi_conn_error( m_conn, &msg );
-		pthread_mutex_unlock( &st_mutex );
-
-		isolate->ThrowException( v8::Exception::TypeError( v8::String::Concat( v8str("Connection failed: "), v8str(msg) ) ) );
-		DBI::dbi_conn_close( m_conn );
+		isolate->ThrowException( v8::Exception::TypeError( v8str("Connection failed") ) );
 		m_conn = NULL;
 
 		return false;
@@ -183,6 +176,22 @@ void DBConnection::LastError(const v8::FunctionCallbackInfo<v8::Value>& args)
 	pthread_mutex_unlock( &st_mutex );
 
 	args.GetReturnValue().Set( v8str( err ) );
+}
+
+void DBConnection::LastErrorCode(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+	v8::Isolate* isolate = v8::Isolate::GetCurrent();
+	v8::HandleScope scope(isolate);
+
+	DBConnection* obj = Unwrap<DBConnection>(args.Holder());
+
+	// This method isn't threadsafe.
+	pthread_mutex_lock( &st_mutex );
+	int code = DBI::dbi_conn_error( obj->m_conn, NULL );
+	pthread_mutex_unlock( &st_mutex );
+
+	v8::Local<v8::Number> num = v8::Number::New( isolate, code );
+	args.GetReturnValue().Set( num );
 }
 
 DBConnection::DBConnection() :
