@@ -105,7 +105,7 @@ A **type** parameter is required. Other parameters are database specific. For da
 ## DBConnection::lastErrorCode()
 `Retrieve the latest error.`
 
-* `Returns`: The latest database error enumerated as below. See [LibDBI's documentation for a comprehensive list](http://libdbi.sourceforge.net/docs/programmers-guide/connerrors.html). *(Enumerations are members of the imported nodedbi module. For example, if imported with **var DBI = import('nodedbi');** one would reference an error as **if( db.lastErrorCode() == DBI.DBI_ERROR_CLIENT ) ... ** or similar.*)
+* `Returns`: The latest database error enumerated as below. See [LibDBI's documentation for a comprehensive list](http://libdbi.sourceforge.net/docs/programmers-guide/connerrors.html). *(Enumerations are members of the imported nodedbi module. For example, if imported with* **var DBI = require('nodedbi');** *one would reference an error as* **if( db.lastErrorCode() == DBI.DBI_ERROR_CLIENT ) ... ** *or similar.*)
   * DBI_ERROR_USER
   * DBI_ERROR_DBD
   * ...
