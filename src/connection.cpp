@@ -36,6 +36,7 @@ void DBConnection::Init( v8::Handle<v8::Object> exports )
 	NODE_SET_PROTOTYPE_METHOD(tpl, "query", Query);
 	NODE_SET_PROTOTYPE_METHOD(tpl, "lastError", LastError);
 	NODE_SET_PROTOTYPE_METHOD(tpl, "lastErrorCode", LastErrorCode);
+	NODE_SET_PROTOTYPE_METHOD(tpl, "lastInsertId", LastInsertID);
 	
 	constructor.Reset(isolate, tpl->GetFunction());
 	exports->Set(v8str("DBConnection"),
@@ -192,6 +193,25 @@ void DBConnection::LastErrorCode(const v8::FunctionCallbackInfo<v8::Value>& args
 
 	v8::Local<v8::Number> num = v8::Number::New( isolate, code );
 	args.GetReturnValue().Set( num );
+}
+
+void DBConnection::LastInsertID(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+	v8::Isolate* isolate = v8::Isolate::GetCurrent();
+	v8::HandleScope scope(isolate);
+
+	DBConnection* obj = Unwrap<DBConnection>(args.Holder());
+	unsigned long long idx;
+	if( args.Length() > 0 && args[0]->IsString() )
+	{
+		v8::Local< v8::String > fieldName = args[0]->ToString();
+		char fieldChar[ fieldName->Length() + 1 ];
+		fieldName->WriteUtf8( fieldChar );
+		idx = DBI::dbi_conn_sequence_last( obj->m_conn, fieldChar );
+	} else
+		idx = DBI::dbi_conn_sequence_last( obj->m_conn, NULL );
+
+	args.GetReturnValue().Set( v8::Number::New(isolate, idx) );
 }
 
 DBConnection::DBConnection() :

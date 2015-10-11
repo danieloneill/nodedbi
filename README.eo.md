@@ -101,6 +101,14 @@ La parametro **type**  (en parametroj) estas deva. Ioj parametroj estas datumbaz
 
 ---
 
+## DBConnection::lastInsertId([nomo])
+`La aktualan vicen legitimilon generis de la antauxa INSERT komando.`
+
+* `nomo` - La nomon de la vico ("sequence", ne "row",) aux NULL se la datumbazon ne havas vicojn eksplicitan.
+* `Revenos`: La aktualan vicen legitimilon generis de la antauxa INSERT komando. Se la datumbazo ne uzi vicojn, tio cxi revenos 0.
+
+---
+
 ## Query()
 `Tio cxi objekto estas revenas per` **DBConnection::query** `kaj malpermesas verki de mem alie.`
 
@@ -173,14 +181,6 @@ La parametro **type**  (en parametroj) estas deva. Ioj parametroj estas datumbaz
 Valorojn estas konvertis al la plej bone Javascript tipo. Binara datumoj estas revenas kiel [Buffer-objekton](https://nodejs.org/api/buffer.html).
 
 * `Revenos`: La valoron.
-
----
-
-## Query::lastInsertId([nomo])
-`La aktualan vicen legitimilon generis de la antauxa INSERT komando.`
-
-* `nomo` - La nomon de la vico ("sequence", ne "row",) aux NULL se la datumbazon ne havas vicojn eksplicitan.
-* `Revenos`: La aktualan vicen legitimilon generis de la antauxa INSERT komando. Se la datumbazo ne uzi vicojn, tio cxi revenos 0.
 
 ---
 

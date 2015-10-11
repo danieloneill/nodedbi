@@ -29,7 +29,6 @@ class DBQuery : public node::ObjectWrap {
 		static void NextRow(const v8::FunctionCallbackInfo<v8::Value>& args);
 		static void CurrentRow(const v8::FunctionCallbackInfo<v8::Value>& args);
 		static void Value(const v8::FunctionCallbackInfo<v8::Value>& args);
-		static void LastInsertID(const v8::FunctionCallbackInfo<v8::Value>& args);
 		static void Begin(const v8::FunctionCallbackInfo<v8::Value>& args);
 		static void Commit(const v8::FunctionCallbackInfo<v8::Value>& args);
 		static void Rollback(const v8::FunctionCallbackInfo<v8::Value>& args);

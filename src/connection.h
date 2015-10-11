@@ -31,5 +31,6 @@ class DBConnection : public node::ObjectWrap {
 		static void Query( const v8::FunctionCallbackInfo< v8::Value >& args );
 		static void LastError( const v8::FunctionCallbackInfo< v8::Value >& args );
 		static void LastErrorCode( const v8::FunctionCallbackInfo< v8::Value >& args );
+		static void LastInsertID(const v8::FunctionCallbackInfo<v8::Value>& args);
 };
 

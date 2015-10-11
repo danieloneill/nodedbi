@@ -27,7 +27,6 @@ void DBQuery::Init( const v8::FunctionCallbackInfo<v8::Value>& args )
 	NODE_SET_PROTOTYPE_METHOD(tpl, "nextRow", NextRow);
 	NODE_SET_PROTOTYPE_METHOD(tpl, "currentRow", CurrentRow);
 	NODE_SET_PROTOTYPE_METHOD(tpl, "value", Value);
-	NODE_SET_PROTOTYPE_METHOD(tpl, "lastInsertId", LastInsertID);
 	NODE_SET_PROTOTYPE_METHOD(tpl, "begin", Begin);
 	NODE_SET_PROTOTYPE_METHOD(tpl, "commit", Commit);
 	NODE_SET_PROTOTYPE_METHOD(tpl, "rollback", Rollback);
@@ -473,29 +472,6 @@ void DBQuery::Value(const v8::FunctionCallbackInfo<v8::Value>& args)
 
 	isolate->ThrowException(v8::Exception::TypeError( v8str("Sorry, the data type at this field index isn't supported for some reason.") ) );
 	return;
-}
-
-void DBQuery::LastInsertID(const v8::FunctionCallbackInfo<v8::Value>& args)
-{
-	v8::Isolate* isolate = v8::Isolate::GetCurrent();
-	v8::HandleScope scope(isolate);
-
-	char *fieldChar = NULL;
-	if( args.Length() > 0 && args[0]->IsString() )
-	{
-		v8::Local< v8::String > fieldName = args[0]->ToString();
-		char *fieldChar = new char[ fieldName->Length() + 1 ];
-		fieldName->WriteUtf8( fieldChar );
-	}
-
-	DBQuery* obj = Unwrap<DBQuery>(args.Holder());
-	unsigned long long idx = DBI::dbi_conn_sequence_last( obj->m_result, fieldChar );
-
-	if( fieldChar )
-		delete fieldChar;
-
-	v8::Local<v8::Number> num = v8::Number::New( isolate, idx );
-	args.GetReturnValue().Set( num );
 }
 
 void DBQuery::Commit(const v8::FunctionCallbackInfo<v8::Value>& args)
