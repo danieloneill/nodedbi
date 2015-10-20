@@ -462,7 +462,19 @@ void DBQuery::Value(const v8::FunctionCallbackInfo<v8::Value>& args)
 		size_t length = DBI::dbi_result_get_field_length_idx( obj->m_result, idx );
 		unsigned char *data = DBI::dbi_result_get_binary_copy_idx( obj->m_result, idx );
 
+#if( NODE_MAJOR_VERSION == 4 )
+		v8::MaybeLocal< v8::Object > mlocObj = node::Buffer::New(isolate, (char *)data, length);
+		v8::Local< v8::Object > bufObj;
+		if( ! mlocObj.ToLocal( &bufObj ) )
+		{
+			free( data );
+			isolate->ThrowException(v8::Exception::TypeError( v8str("Failed to allocate a new Buffer for binary data result.") ) );
+			return;
+		}
+#endif
+#if( NODE_MAJOR_VERSION == 0 )
 		v8::Local< v8::Object > bufObj = node::Buffer::New(isolate, (const char *)data, length);
+#endif
 		free(data);
 
 		args.GetReturnValue().Set( bufObj );

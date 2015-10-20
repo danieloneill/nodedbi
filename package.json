@@ -1,6 +1,6 @@
 {
   "name": "nodedbi",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "A LibDBI interface for Node.js",
   "author": {
     "name": "Daniel O'Neill",
