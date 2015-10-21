@@ -447,9 +447,16 @@ void DBQuery::Value(const v8::FunctionCallbackInfo<v8::Value>& args)
 	}
 	else if( DBI_TYPE_STRING == type )
 	{
-		char *str = DBI::dbi_result_get_as_string_copy_idx( obj->m_result, idx );
-		args.GetReturnValue().Set( v8str( str ) );
-		free(str);
+		char *str = DBI::dbi_result_get_string_copy_idx( obj->m_result, idx );
+		if( !str )
+		{
+			args.GetReturnValue().Set( v8::Null(isolate) );
+			return;
+		}
+
+		v8::Local<v8::String> vstr = v8str(str);
+		args.GetReturnValue().Set( vstr );
+		free( str );
 		return;
 	}
 	else if( DBI_TYPE_DATETIME == type )
@@ -460,14 +467,18 @@ void DBQuery::Value(const v8::FunctionCallbackInfo<v8::Value>& args)
 	else if( DBI_TYPE_BINARY == type )
 	{
 		size_t length = DBI::dbi_result_get_field_length_idx( obj->m_result, idx );
-		unsigned char *data = DBI::dbi_result_get_binary_copy_idx( obj->m_result, idx );
+		const unsigned char *data = DBI::dbi_result_get_binary_idx( obj->m_result, idx );
+		if( !data )
+		{
+			args.GetReturnValue().Set( v8::Null(isolate) );
+			return;
+		}
 
 #if( NODE_MAJOR_VERSION == 4 )
-		v8::MaybeLocal< v8::Object > mlocObj = node::Buffer::New(isolate, (char *)data, length);
+		v8::MaybeLocal< v8::Object > mlocObj = node::Buffer::Copy(isolate, (const char *)data, length);
 		v8::Local< v8::Object > bufObj;
-		if( ! mlocObj.ToLocal( &bufObj ) )
+		if( mlocObj.IsEmpty() || !mlocObj.ToLocal( &bufObj ) )
 		{
-			free( data );
 			isolate->ThrowException(v8::Exception::TypeError( v8str("Failed to allocate a new Buffer for binary data result.") ) );
 			return;
 		}
@@ -475,7 +486,6 @@ void DBQuery::Value(const v8::FunctionCallbackInfo<v8::Value>& args)
 #if( NODE_MAJOR_VERSION == 0 )
 		v8::Local< v8::Object > bufObj = node::Buffer::New(isolate, (const char *)data, length);
 #endif
-		free(data);
 
 		args.GetReturnValue().Set( bufObj );
 
