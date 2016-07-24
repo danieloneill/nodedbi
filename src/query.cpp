@@ -474,7 +474,7 @@ void DBQuery::Value(const v8::FunctionCallbackInfo<v8::Value>& args)
 			return;
 		}
 
-#if( NODE_MAJOR_VERSION == 4 )
+#if( NODE_MAJOR_VERSION > 3 )
 		v8::MaybeLocal< v8::Object > mlocObj = node::Buffer::Copy(isolate, (const char *)data, length);
 		v8::Local< v8::Object > bufObj;
 		if( mlocObj.IsEmpty() || !mlocObj.ToLocal( &bufObj ) )
