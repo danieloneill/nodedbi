@@ -53,7 +53,7 @@ DBQuery::~DBQuery()
 	m_parent->Unref();
 }
 
-#define FQINITIAL 1024
+#define FQINITIAL 2048
 #define FQINC 64
 bool DBQuery::query( const v8::FunctionCallbackInfo<v8::Value>& args )
 {
@@ -70,8 +70,11 @@ bool DBQuery::query( const v8::FunctionCallbackInfo<v8::Value>& args )
 		arrayObj = v8::Local< v8::Array >::Cast( args[1] );
 	}
 
-	char query[1024];
-	args[0]->ToString()->WriteUtf8( query, sizeof(query) );
+	v8::Local<v8::String> stringArg = args[0]->ToString();
+	int rawQueryLength = stringArg->Utf8Length();
+	char *rawQuery = (char*)malloc( rawQueryLength + 1 );
+	args[0]->ToString()->WriteUtf8( rawQuery, rawQueryLength );
+	rawQuery[ rawQueryLength ] = '\0';
 
 	ssize_t fmtCapacity = FQINITIAL;
 	char *fmtQuery = (char *)malloc( fmtCapacity+1 );
@@ -82,10 +85,10 @@ bool DBQuery::query( const v8::FunctionCallbackInfo<v8::Value>& args )
 	int idxPos = 0;
 	bool inIndex = false, atEnd = false;
 
-	int qlen = strlen( query );
+	int qlen = strlen( rawQuery );
 	for( int x=0; x < qlen; x++ )
 	{
-		char c = query[x];
+		char c = rawQuery[x];
 		if( fqPos + 2 >= fmtCapacity ) // +2 because we may have a spare byte + terminator.
 		{
 			// Enlarge
@@ -97,6 +100,7 @@ bool DBQuery::query( const v8::FunctionCallbackInfo<v8::Value>& args )
 		{
 			if( c == '%' )
 			{
+				idxPos = 0;
 				inIndex = true;
 				continue;
 			}
@@ -115,7 +119,7 @@ bool DBQuery::query( const v8::FunctionCallbackInfo<v8::Value>& args )
 			continue;
 		}
 		// Still reading an index...
-		else if( c > '0' && c < '9' && idxPos < 5 )
+		else if( c >= '0' && c <= '9' && idxPos < 5 )
 		{
 			idxStr[idxPos++] = c;
 			idxStr[idxPos] = '\0';
@@ -135,6 +139,7 @@ bool DBQuery::query( const v8::FunctionCallbackInfo<v8::Value>& args )
 		{
 			// Error.
 			isolate->ThrowException(v8::Exception::TypeError( v8str("Index is invalid.") ) );
+			delete rawQuery;
 			return false;
 		}
 
@@ -151,8 +156,8 @@ bool DBQuery::query( const v8::FunctionCallbackInfo<v8::Value>& args )
 			v8::Local< v8::String > s = val->ToString();
 
 			char *quoted;
-			size_t bufLength = s->Length();
-			char *unquoted = new char[ bufLength + 1 ];
+			size_t bufLength = s->Utf8Length();
+			char *unquoted = (char *)malloc( bufLength + 1 );
 			s->WriteUtf8( unquoted, bufLength );
 			unquoted[bufLength] = '\0';
 
@@ -168,12 +173,13 @@ bool DBQuery::query( const v8::FunctionCallbackInfo<v8::Value>& args )
 			else
 				len = DBI::dbi_conn_quote_string_copy( m_parent->m_conn, unquoted, &quoted );
 
-			delete unquoted;
+			free( unquoted );
 
 			if( len == 0 )
 			{
 				// Error.
 				isolate->ThrowException(v8::Exception::TypeError( v8str("Parameter quotation failed.") ) );
+				delete rawQuery;
 				return false;
 			}
 			
@@ -254,6 +260,7 @@ bool DBQuery::query( const v8::FunctionCallbackInfo<v8::Value>& args )
 	pthread_mutex_unlock( &st_mutex );
 
 	free( fmtQuery );
+	free( rawQuery );
 	if( !m_result )
 		return false;
 	return true;
@@ -474,7 +481,9 @@ void DBQuery::Value(const v8::FunctionCallbackInfo<v8::Value>& args)
 			return;
 		}
 
-#if( NODE_MAJOR_VERSION > 3 )
+#if( NODE_MAJOR_VERSION == 0 )
+		v8::Local< v8::Object > bufObj = node::Buffer::New(isolate, (const char *)data, length);
+#else
 		v8::MaybeLocal< v8::Object > mlocObj = node::Buffer::Copy(isolate, (const char *)data, length);
 		v8::Local< v8::Object > bufObj;
 		if( mlocObj.IsEmpty() || !mlocObj.ToLocal( &bufObj ) )
@@ -482,9 +491,6 @@ void DBQuery::Value(const v8::FunctionCallbackInfo<v8::Value>& args)
 			isolate->ThrowException(v8::Exception::TypeError( v8str("Failed to allocate a new Buffer for binary data result.") ) );
 			return;
 		}
-#endif
-#if( NODE_MAJOR_VERSION == 0 )
-		v8::Local< v8::Object > bufObj = node::Buffer::New(isolate, (const char *)data, length);
 #endif
 
 		args.GetReturnValue().Set( bufObj );

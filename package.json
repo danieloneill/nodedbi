@@ -1,6 +1,6 @@
 {
   "name": "nodedbi",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "description": "A LibDBI interface for Node.js",
   "author": {
     "name": "Daniel O'Neill",
@@ -25,6 +25,9 @@
   },
   "engines": {
     "node": ">=0.11.13"
+  },
+  "dependencies": {
+    "nan": ">=2.4.0"
   },
   "gypfile": true,
   "readmeFilename": "README.md",
