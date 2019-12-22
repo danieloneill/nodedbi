@@ -3,6 +3,7 @@
 #include <v8.h>
 #include <node.h>
 #include <node_object_wrap.h>
+#include <nan.h>
 
 #include <string.h>
 #include <stdlib.h>
@@ -53,7 +54,7 @@ void DBConnection::New(const v8::FunctionCallbackInfo<v8::Value>& args) {
 		const int argc = 1;
 		v8::Local<v8::Value> argv[argc] = { args[0] };
 		v8::Local<v8::Function> cons = v8::Local<v8::Function>::New(isolate, constructor);
-		args.GetReturnValue().Set(cons->NewInstance(argc, argv));
+		args.GetReturnValue().Set(Nan::NewInstance(cons, argc, argv).ToLocalChecked());
 		return;
 	}
 

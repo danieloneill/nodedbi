@@ -2,6 +2,7 @@
 #include <node.h>
 #include <node_object_wrap.h>
 #include <node_buffer.h>
+#include <nan.h>
 
 #include <string.h>
 #include <stdlib.h>
@@ -32,7 +33,7 @@ void DBQuery::Init( const v8::FunctionCallbackInfo<v8::Value>& args )
 	NODE_SET_PROTOTYPE_METHOD(tpl, "rollback", Rollback);
 
 	v8::Local<v8::Function> function = tpl->GetFunction();
-	v8::Handle<v8::Object> instance = function->NewInstance();
+	v8::Handle<v8::Object> instance = Nan::NewInstance(function).ToLocalChecked();
 
 	this->Wrap(instance);
 
@@ -196,7 +197,7 @@ bool DBQuery::query( const v8::FunctionCallbackInfo<v8::Value>& args )
 		}
 		else if( val->IsInt32() )
 		{
-			long long intv = val->ToInt32()->Value();
+			long long intv = Nan::To<int32_t>(val).FromJust();
 			char numStr[32];
 			snprintf( numStr, 32, "%lli", intv );
 			int len = strlen(numStr);
@@ -213,7 +214,7 @@ bool DBQuery::query( const v8::FunctionCallbackInfo<v8::Value>& args )
 		}
 		else if( val->IsUint32() )
 		{
-			unsigned long long intv = val->ToUint32()->Value();
+			unsigned long long intv = Nan::To<uint32_t>(val).FromJust();
 			char numStr[32];
 			snprintf( numStr, 32, "%llu", intv );
 			int len = strlen(numStr);
@@ -230,7 +231,7 @@ bool DBQuery::query( const v8::FunctionCallbackInfo<v8::Value>& args )
 		}
 		else // FIXME: If it isn't a string or int32, it's a 'number', I guess:
 		{
-			double dbl = val->ToNumber()->Value();
+			double dbl = Nan::To<double>(val).FromJust();
 			char numStr[32];
 			snprintf( numStr, 32, "%f", dbl );
 			int len = strlen(numStr);
