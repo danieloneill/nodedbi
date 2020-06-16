@@ -32,8 +32,8 @@ void DBQuery::Init( const v8::FunctionCallbackInfo<v8::Value>& args )
 	NODE_SET_PROTOTYPE_METHOD(tpl, "commit", Commit);
 	NODE_SET_PROTOTYPE_METHOD(tpl, "rollback", Rollback);
 
-	v8::Local<v8::Function> function = tpl->GetFunction();
-	v8::Handle<v8::Object> instance = Nan::NewInstance(function).ToLocalChecked();
+	v8::Local<v8::Function> function = Nan::GetFunction(tpl).ToLocalChecked();
+	v8::Local<v8::Object> instance = Nan::NewInstance(function).ToLocalChecked();
 
 	this->Wrap(instance);
 
@@ -71,10 +71,10 @@ bool DBQuery::query( const v8::FunctionCallbackInfo<v8::Value>& args )
 		arrayObj = v8::Local< v8::Array >::Cast( args[1] );
 	}
 
-	v8::Local<v8::String> stringArg = args[0]->ToString();
-	int rawQueryLength = stringArg->Utf8Length();
+	v8::Local<v8::String> stringArg = Nan::To<v8::String>(args[0]).ToLocalChecked();
+	int rawQueryLength = stringArg->Utf8Length(isolate);
 	char *rawQuery = (char*)malloc( rawQueryLength + 1 );
-	args[0]->ToString()->WriteUtf8( rawQuery, rawQueryLength );
+	Nan::To<v8::String>(args[0]).ToLocalChecked()->WriteUtf8( isolate, rawQuery, rawQueryLength );
 	rawQuery[ rawQueryLength ] = '\0';
 
 	ssize_t fmtCapacity = FQINITIAL;
@@ -154,12 +154,12 @@ bool DBQuery::query( const v8::FunctionCallbackInfo<v8::Value>& args )
 		if( val->IsString() )
 		{
 			// Quote it:
-			v8::Local< v8::String > s = val->ToString();
+			v8::Local< v8::String > s = Nan::To<v8::String>(val).ToLocalChecked();
 
 			char *quoted;
-			size_t bufLength = s->Utf8Length();
+			size_t bufLength = s->Length();
 			char *unquoted = (char *)malloc( bufLength + 1 );
-			s->WriteUtf8( unquoted, bufLength );
+			s->WriteUtf8( isolate, unquoted, bufLength );
 			unquoted[bufLength] = '\0';
 
 			size_t len;
@@ -197,7 +197,7 @@ bool DBQuery::query( const v8::FunctionCallbackInfo<v8::Value>& args )
 		}
 		else if( val->IsInt32() )
 		{
-			long long intv = Nan::To<int32_t>(val).FromJust();
+			unsigned long long intv = Nan::To<uint32_t>(val).FromJust();
 			char numStr[32];
 			snprintf( numStr, 32, "%lli", intv );
 			int len = strlen(numStr);
@@ -305,7 +305,7 @@ void DBQuery::FieldName(const v8::FunctionCallbackInfo<v8::Value>& args)
 	}
 
 	DBQuery* obj = Unwrap<DBQuery>(args.Holder());
-	unsigned int idx = args[0]->NumberValue();
+	unsigned int idx = args[0]->Uint32Value(Nan::GetCurrentContext()).ToChecked();
 	if( idx < 1 || idx > DBI::dbi_result_get_numfields( obj->m_result ) )
 	{
 		isolate->ThrowException(v8::Exception::TypeError( v8str("Index is invalid.") ) );
@@ -332,10 +332,10 @@ void DBQuery::FieldIndex(const v8::FunctionCallbackInfo<v8::Value>& args)
 	}
 
 	DBQuery* obj = Unwrap<DBQuery>(args.Holder());
-	v8::Local< v8::String > fieldName = args[0]->ToString();
+	v8::Local< v8::String > fieldName = Nan::To<v8::String>(args[0]).ToLocalChecked();
 	
 	char *fieldChar = new char[ fieldName->Length() + 1 ];
-	fieldName->WriteUtf8( fieldChar );
+	fieldName->WriteUtf8( isolate, fieldChar );
 	unsigned int idx = DBI::dbi_result_get_field_idx( obj->m_result, fieldChar );
 	delete fieldChar;
 
@@ -355,7 +355,7 @@ void DBQuery::Seek(const v8::FunctionCallbackInfo<v8::Value>& args)
 	}
 
 	DBQuery* obj = Unwrap<DBQuery>(args.Holder());
-	unsigned long long idx = args[0]->NumberValue();
+	unsigned long long idx = args[0]->Uint32Value(Nan::GetCurrentContext()).ToChecked();
 	int result = DBI::dbi_result_seek_row( obj->m_result, idx );
 	args.GetReturnValue().Set( v8::Boolean::New( isolate, result == 1 ? true : false ) );
 }
@@ -404,13 +404,13 @@ void DBQuery::Value(const v8::FunctionCallbackInfo<v8::Value>& args)
 	DBQuery* obj = Unwrap<DBQuery>(args.Holder());
 	unsigned int idx;
 	if( args[0]->IsNumber() )
-		idx = args[0]->NumberValue();
+		idx = args[0]->Uint32Value(Nan::GetCurrentContext()).ToChecked();
 	else if( args[0]->IsString() )
 	{
-		v8::Local< v8::String > fieldName = args[0]->ToString();
+		v8::Local< v8::String > fieldName = Nan::To<v8::String>(args[0]).ToLocalChecked();
 	
 		char *fieldChar = new char[ fieldName->Length() + 1 ];
-		fieldName->WriteUtf8( fieldChar );
+		fieldName->WriteUtf8( isolate, fieldChar );
 		idx = DBI::dbi_result_get_field_idx( obj->m_result, fieldChar );
 		delete fieldChar;
 	}
@@ -436,7 +436,7 @@ void DBQuery::Value(const v8::FunctionCallbackInfo<v8::Value>& args)
 		DBI::dbi_conn_error( obj->parent()->m_conn, &msg );
 		pthread_mutex_unlock( &st_mutex );
 
-		isolate->ThrowException(v8::Exception::TypeError( v8::String::Concat( v8str("For some reason I can't figure out the data storage type used by this field: "), v8str(msg) ) ) );
+		isolate->ThrowException(v8::Exception::TypeError( v8::String::Concat(isolate, v8str("For some reason I can't figure out the data storage type used by this field: "), v8str(msg)) ) );
 		return;
 	}
 
@@ -469,7 +469,7 @@ void DBQuery::Value(const v8::FunctionCallbackInfo<v8::Value>& args)
 	}
 	else if( DBI_TYPE_DATETIME == type )
 	{
-		args.GetReturnValue().Set( v8::Date::New( isolate, DBI::dbi_result_get_datetime_idx( obj->m_result, idx ) ) );
+		args.GetReturnValue().Set( v8::Date::New( isolate->GetCurrentContext(), DBI::dbi_result_get_datetime_idx( obj->m_result, idx ) ).ToLocalChecked() );
 		return;
 	}
 	else if( DBI_TYPE_BINARY == type )

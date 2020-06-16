@@ -18,7 +18,7 @@ static bool dbi_initialised = false;
 
 v8::Persistent< v8::Function > DBConnection::constructor;
 
-void DBConnection::Init( v8::Handle<v8::Object> exports )
+void DBConnection::Init( v8::Local<v8::Object> exports )
 {
 	// Initialise if needed. Ye olde C-style.
 	if( !dbi_initialised )
@@ -39,9 +39,9 @@ void DBConnection::Init( v8::Handle<v8::Object> exports )
 	NODE_SET_PROTOTYPE_METHOD(tpl, "lastErrorCode", LastErrorCode);
 	NODE_SET_PROTOTYPE_METHOD(tpl, "lastInsertId", LastInsertID);
 	
-	constructor.Reset(isolate, tpl->GetFunction());
+	constructor.Reset(isolate, Nan::GetFunction(tpl).ToLocalChecked());
 	exports->Set(v8str("DBConnection"),
-	tpl->GetFunction());
+	Nan::GetFunction(tpl).ToLocalChecked());
 }
 
 void DBConnection::New(const v8::FunctionCallbackInfo<v8::Value>& args) {
@@ -80,9 +80,10 @@ bool DBConnection::initialise( const v8::FunctionCallbackInfo<v8::Value>& args )
 	v8::Isolate* isolate = v8::Isolate::GetCurrent();
 	v8::HandleScope scope(isolate);
 
-	v8::Local< v8::Object > arg = args[0]->ToObject();
+	v8::Local< v8::Object > arg = Nan::To<v8::Object>(args[0]).ToLocalChecked();
 	v8::Local< v8::Value > vkey, vval;
-	char ckey[32], cval[64];
+	char ckey[32];
+	char cval[64];
 
 	v8::Local< v8::Value > typeVal = arg->Get( v8str("type") );
 	if( typeVal->IsNull() )
@@ -91,25 +92,25 @@ bool DBConnection::initialise( const v8::FunctionCallbackInfo<v8::Value>& args )
 		return false;
 	}
 
-	v8::Local< v8::String > tstr = typeVal->ToString();
+	v8::Local< v8::String > tstr = Nan::To<v8::String>(typeVal).ToLocalChecked();
 	if( tstr->Length() == 0 )
 	{
 		isolate->ThrowException(v8::Exception::TypeError(v8str("A 'type' parameter specifying the database type is required.")));
 		return false;
 	}
 
-	tstr->WriteUtf8( cval, sizeof(cval) );
+	tstr->WriteUtf8(isolate, cval, sizeof(cval));
 	m_conn = DBI::dbi_conn_new_r( cval, dbi_instance );
 
-	v8::Local< v8::Array > propNames = arg->GetPropertyNames();
+	v8::Local< v8::Array > propNames = Nan::GetOwnPropertyNames(arg).ToLocalChecked();
 
 	for( unsigned int x=0; x < propNames->Length(); x++ )
 	{
 		vkey = propNames->Get(x);
 		vval = arg->Get( vkey );
 
-		vkey->ToString()->WriteUtf8( ckey, sizeof(ckey) );
-		vval->ToString()->WriteUtf8( cval, sizeof(cval) );
+		Nan::To<v8::String>(vkey).ToLocalChecked()->WriteUtf8( isolate, ckey, sizeof(ckey) );
+		Nan::To<v8::String>(vval).ToLocalChecked()->WriteUtf8( isolate, cval, sizeof(cval) );
 
 		if( strcmp( ckey, "type" ) == 0 )
 		{
@@ -205,9 +206,9 @@ void DBConnection::LastInsertID(const v8::FunctionCallbackInfo<v8::Value>& args)
 	unsigned long long idx;
 	if( args.Length() > 0 && args[0]->IsString() )
 	{
-		v8::Local< v8::String > fieldName = args[0]->ToString();
+		v8::Local< v8::String > fieldName = Nan::To<v8::String>(args[0]).ToLocalChecked();
 		char fieldChar[ fieldName->Length() + 1 ];
-		fieldName->WriteUtf8( fieldChar );
+		fieldName->WriteUtf8( isolate, fieldChar );
 		idx = DBI::dbi_conn_sequence_last( obj->m_conn, fieldChar );
 	} else
 		idx = DBI::dbi_conn_sequence_last( obj->m_conn, NULL );
@@ -227,7 +228,7 @@ DBConnection::~DBConnection()
 }
 
 // "Actual" node init:
-static void init(v8::Handle<v8::Object> exports) {
+static void init(v8::Local<v8::Object> exports) {
 	DBConnection::Init(exports);
 }
 

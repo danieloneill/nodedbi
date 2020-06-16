@@ -1,3 +1,4 @@
+#include <nan.h>
 #include <pthread.h>
 
 namespace DBI {
@@ -6,7 +7,7 @@ namespace DBI {
  }
 }
 
-#define v8str(a) v8::String::NewFromUtf8(isolate, a)
+#define v8str(a) Nan::New<v8::String>(a).ToLocalChecked()
 
 static pthread_mutex_t st_mutex;
 
@@ -26,7 +27,7 @@ class DBConnection : public node::ObjectWrap {
 		bool initialise( const v8::FunctionCallbackInfo< v8::Value > &args );
 	
 		// v8 stuff:
-                static void Init(v8::Handle<v8::Object> exports);
+                static void Init(v8::Local<v8::Object> exports);
 		static void New(const v8::FunctionCallbackInfo< v8::Value >& args);
 		static void Query( const v8::FunctionCallbackInfo< v8::Value >& args );
 		static void LastError( const v8::FunctionCallbackInfo< v8::Value >& args );
